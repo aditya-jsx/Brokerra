@@ -1,6 +1,7 @@
 import { createClient, type RedisClientType } from "redis";
 import WebSocket from "ws";
 const ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@trade/btcusdt@trade/ethusdt@trade/bnbusdt@trade");
+// const ws = new WebSocket("wss://stream.binance.com:9443/stream?streams=btcusdt@trade/ethusdt@trade/bnbusdt@trade/dogeusdt@trade");
 
 export const client: RedisClientType = createClient({
     url: "redis://localhost:6379"

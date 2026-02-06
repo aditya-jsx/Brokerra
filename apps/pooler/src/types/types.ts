@@ -9,3 +9,10 @@ export type ticketData ={
     m:boolean,
     M:boolean
   }
+
+  export interface ProcessedTrade{
+    symbol: string;
+    askPrice: number;
+    bidPrice: number;
+    timestamp: number;
+  }

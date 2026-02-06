@@ -1,40 +1,46 @@
 import { client } from "..";
-import { ticketData } from "../types/types";
+import { ticketData, ProcessedTrade } from "../types/types";
 
-interface Params{
-    callback: ()=>void,
-    delay: number
+const lastPublishedTimes: Record<string, number> = {};
+const throttleDelay = 100;
+const marginRate = 0.0005;
+
+function mapTradeData(data: ticketData): ProcessedTrade {
+    const currentPrice = Number(data.p);
+    return {
+        symbol: data.s,
+        askPrice: currentPrice + (currentPrice * marginRate),
+        bidPrice: currentPrice - (currentPrice * marginRate),
+        timestamp: data.E
+    }
 }
 
 export async function publishToRedisChannel (data: ticketData){
+    const trade = mapTradeData(data);
+    const now = Date.now();
+    const symbol = trade.symbol;
+    // const lastTime = lastPublishedTimes[trade.symbol] || 0;
 
-    const currentPrice = Number(data.p);
+    if(lastPublishedTimes[symbol] && (now - lastPublishedTimes[symbol] < throttleDelay)){
+        return;
+    }
 
-    const askPrice = currentPrice + (currentPrice * 0.0005);
-    const bidPrice = currentPrice - (currentPrice * 0.0005);
+    lastPublishedTimes[symbol] = now;
 
-    const name = data.s;
-    const channel = name.slice(0, 3);
+    const channel = trade.symbol.replace("USDT", "");
 
-    const channelObject = { name, askPrice, bidPrice };
+    try{
+        await client.publish(channel, JSON.stringify(trade));
 
-    await client.publish(channel, JSON.stringify(channelObject));
-    console.log("Published to Redis");
+        await client.hSet(`asset:${trade.symbol}`, {
+            name: trade.symbol,
+            askPrice: trade.askPrice.toString(),
+            bidPrice: trade.bidPrice.toString(),
+            lastUpdate: trade.timestamp.toString()
+        })
 
-    await client.hSet(`asset: ${name}`, {
-        name,
-        askPrice,
-        bidPrice
-    });
+        console.log(`[${trade.symbol}] published & cached`);
+    }catch(e){
+        console.error("Redis error", e);
+    }
 }
-
-// function throttlePublish({callback, delay}: Params) {
-//     let lastTime = 0;
-//     return function (...args: any) {
-//         let now = Date.now();
-//         if (now - lastTime >= delay) {
-//             callback.apply(this, args);
-//             lastTime = now;
-//         }
-//     };
-// }
