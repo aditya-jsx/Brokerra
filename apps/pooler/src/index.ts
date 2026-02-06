@@ -1,6 +1,7 @@
 import { createClient, type RedisClientType } from "redis";
 import WebSocket from "ws";
-const ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@trade/btcusdt@trade/ethusdt@trade/bnbusdt@trade");
+import { publishToRedisChannel } from "./router/router";
+// const ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@trade/btcusdt@trade/ethusdt@trade/bnbusdt@trade");
 // const ws = new WebSocket("wss://stream.binance.com:9443/stream?streams=btcusdt@trade/ethusdt@trade/bnbusdt@trade/dogeusdt@trade");
 
 export const client: RedisClientType = createClient({
@@ -9,17 +10,40 @@ export const client: RedisClientType = createClient({
 
 client.on('error', err => console.log('Redis Client Error', err));
 
-export async function connectToRedis(){
-    if(!client.isOpen){
+async function init(){
+    try{
         await client.connect();
         console.log("Redis Connected");
+
+        connectBinance();
+    }catch(e){
+        console.error("Failed to connect to Redis", e);
+        process.exit(1);
     }
 }
 
-ws.on("open",() => {
-    console.log("Connected to Redis");
-})
+function connectBinance(){
+    const ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@trade/btcusdt@trade/ethusdt@trade/bnbusdt@trade");
 
-ws.on("message", (message) => {
-    console.log("Receiving messages from Binance");
-})
+    ws.on("open", () => {
+        console.log("Connected to Binance");
+    })
+
+    ws.on("message", (data) => {
+        try{
+            const parseData = JSON.parse(data.toString());
+            publishToRedisChannel(parseData);
+        }catch(e){
+            console.error("Error parsing message");
+        }
+    });
+
+    ws.on("close", () => {
+        setTimeout(connectBinance, 5000);
+    });
+
+    ws.on("error", (error) => {
+        console.error("WebSocket Error: ", error.message);
+        ws.terminate();
+    })
+}

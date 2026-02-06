@@ -16,11 +16,13 @@ export async function connectToRedis(){
     }
 }
 
-let session = client.hGetAll('asset')
-console.log(session)
 
 wss.on('connection', function connection(ws) {
-  ws.on('error', console.error);
+    ws.on('error', console.error);
+    
+    connectToRedis();
+    let session = client.hGetAll('asset')
+    console.log(session)
 
   ws.on('message', function message(data) {
     console.log('received: %s', data);
