@@ -32,6 +32,9 @@ function connectBinance(){
     ws.on("message", (data) => {
         try{
             const parseData = JSON.parse(data.toString());
+            if(parseData.s){
+                parseData.s = parseData.s.toUpperCase();
+            }
             publishToRedisChannel(parseData);
         }catch(e){
             console.error("Error parsing message");

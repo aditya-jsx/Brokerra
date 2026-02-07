@@ -30,10 +30,10 @@ export async function publishToRedisChannel (data: ticketData){
     const channel = trade.symbol.replace("USDT", "");
 
     try{
-        await client.publish(channel, JSON.stringify(trade));
+        await client.publish(channel.toUpperCase(), JSON.stringify(trade));
 
         await client.hSet(`asset:${trade.symbol}`, {
-            name: trade.symbol,
+            name: trade.symbol.toUpperCase(),
             askPrice: trade.askPrice.toString(),
             bidPrice: trade.bidPrice.toString(),
             lastUpdate: trade.timestamp.toString()
