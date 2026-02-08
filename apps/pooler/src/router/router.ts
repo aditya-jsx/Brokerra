@@ -19,6 +19,7 @@ export async function publishToRedisChannel (data: ticketData){
     const trade = mapTradeData(data);
     const now = Date.now();
     const symbol = trade.symbol;
+    console.log(symbol);
     // const lastTime = lastPublishedTimes[trade.symbol] || 0;
 
     if(lastPublishedTimes[symbol] && (now - lastPublishedTimes[symbol] < throttleDelay)){

@@ -50,3 +50,5 @@ function connectBinance(){
         ws.terminate();
     })
 }
+
+init();

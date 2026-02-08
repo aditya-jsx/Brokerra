@@ -1,7 +1,4 @@
 import { createClient, type RedisClientType } from "redis";
-import { WebSocketServer } from "ws";
-
-const wss = new WebSocketServer({ port: 8080 });
 
 export const client: RedisClientType = createClient({
     url: "redis://localhost:6379"
@@ -15,17 +12,3 @@ export async function connectToRedis(){
         console.log("Redis Connected");
     }
 }
-
-
-wss.on('connection', function connection(ws) {
-    ws.on('error', console.error);
-    
-    connectToRedis();
-    let session = client.hGetAll('asset')
-    console.log(session)
-
-  ws.on('message', function message(data) {
-    console.log('received: %s', data);
-  });
-
-});
