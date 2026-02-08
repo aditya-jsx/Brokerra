@@ -1,21 +1,28 @@
 import { WebSocketServer } from "ws";
-import { client, connectToRedis } from "./services/redis";
+import { UserManager } from "./services/UserManager";
 
 const wss = new WebSocketServer({ port: 8080 });
 
-function init(){
-  wss.on('connection', async function connection(ws) {
-      ws.on('error', console.error);
-      console.log("Connected to ws");
-      try{
-        await connectToRedis();
-        console.log("connected to redis");
-        let session = await client.hGetAll('asset:BTCUSDT')
-        console.log(session)
-      }catch(e){
-        console.error("Failed to connect to pooler", e);
+wss.on('connection', async function connection(ws) {
+  console.log("New user connected to ws server")
+  ws.on('error', console.error);
+  
+  ws.on("message", async function message(data){
+    try{
+      const {type, payload} = JSON.parse(data.toString());
+      if(type === "SUBSCRIBE"){
+          payload.securities.forEach((s:string) => {
+            UserManager.getInstance().subscribe(s, ws)
+          })
       }
-  });
-}
-
-init();
+      if(type === "UNSUBSCRIBE"){
+          payload.securities.forEach((s:string) => {
+            UserManager.getInstance().unsubscribe(s, ws)
+          })
+      }
+    }catch(e){
+      console.error("Failed to parse the message", e);
+    }
+  })
+  // ws.on("close", () => {})
+});
