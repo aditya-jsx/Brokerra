@@ -2,7 +2,7 @@ import { client } from "..";
 import { ticketData, ProcessedTrade } from "../types/types";
 
 const lastPublishedTimes: Record<string, number> = {};
-const throttleDelay = 100;
+const throttleDelay = 200;
 const marginRate = 0.0005;
 
 function mapTradeData(data: ticketData): ProcessedTrade {
@@ -31,7 +31,7 @@ export async function publishToRedisChannel (data: ticketData){
     const channel = trade.symbol.replace("USDT", "");
 
     try{
-        await client.publish(channel.toUpperCase(), JSON.stringify(trade));
+        await client.publish(`ticker.${channel}`, JSON.stringify(trade));
 
         await client.hSet(`asset:${trade.symbol}`, {
             name: trade.symbol.toUpperCase(),
